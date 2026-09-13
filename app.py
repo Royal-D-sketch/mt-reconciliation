@@ -331,10 +331,10 @@ STORES = [
     "Tops (รวม Tops Daily และ Tops Care)",
     "CPAXT (Makro หน้าร้าน)",
     "CPAXT (Makro Online / Makro PRO)",
+    "CPAXT (Lotus's / Lotus's Super)",
     "CPAXT (Lotus's Wholesale)",
     "Go Wholesale",
     "Ucare",
-    "Ek-Chai Distribution (Lotus's / Lotus's Super)",
     "Watsons",
     "Golden Place (สุวรรณชาด)",
     "Tsuruha",
@@ -357,6 +357,7 @@ CPAXT_STORES = {
     "CPAXT (Makro หน้าร้าน)",
     "CPAXT (Makro Online / Makro PRO)",
     "CPAXT (Lotus's Wholesale)",
+    "CPAXT (Lotus's / Lotus's Super)",
 }
 
 DB_FILE = "annual_recon_database.csv"
@@ -430,8 +431,8 @@ MOCKUP_DB: dict[str, dict] = {
         "other_fee":         42_000, "s_oth": "ok",
         "net": 10_893_000,
     },
-    "Ek-Chai Distribution (Lotus's / Lotus's Super)": {
-        "doc":"REM-LTS-2567-2341","date":"01/09/2567","period":"ส.ค. 67","billing_co":"เอก-ชัย ดิสทริบิวชั่น ซิสเทม จำกัด",
+    "CPAXT (Lotus's / Lotus's Super)": {
+        "doc":"REM-LTS-2567-2341","date":"01/09/2567","period":"ส.ค. 67","billing_co":"ซีพีแอ็กซ์ตร้า จำกัด (มหาชน) — CPAXT (Lotus's)",
         "total":16_100_000,
         "c1_promo_support": 680_000, "s_c1": "ok",
         "c2_media_brochure": 260_000,"s_c2": "ok",
