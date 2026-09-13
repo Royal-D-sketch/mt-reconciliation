@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Streamlit secrets (ห้าม upload ขึ้น GitHub!)
+.streamlit/secrets.toml
+
+# ไฟล์ที่อัปโหลดชั่วคราว
+*.pdf
+*.xlsx
+*.jpg
+*.jpeg
+*.png
+
+# Windows
+Thumbs.db
+desktop.ini
+*.lnk
+
+# VS Code / Editor
+.vscode/
+.idea/
+*.swp
+
+# Environment
+.env
+venv/
+.venv/
