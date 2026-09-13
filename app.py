@@ -18,19 +18,45 @@ st.set_page_config(
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 🔐 PASSWORD LOGIN
+# 🔐 MULTI-USER AUTHENTICATION
 # ══════════════════════════════════════════════════════════════════════════════
-def check_password() -> bool:
-    try:
-        correct_pw = st.secrets["app"]["password"]
-        app_title  = st.secrets["app"].get("title", "Modern Trade Reconciliation AI")
-        team_name  = st.secrets["app"].get("team",  "ทีมบัญชี")
-    except Exception:
-        correct_pw = "MT029030445*"
-        app_title  = "Modern Trade Reconciliation AI"
-        team_name  = "ทีมบัญชี"
+USERS_DB = {
+    "nok": {
+        "username": "NOK",
+        "password": "AC029030445*",
+        "name": "คุณนก",
+        "role": "หัวหน้าบัญชี",
+        "badge": "👑 หัวหน้าบัญชี",
+        "color": "#FFD700"
+    },
+    "art": {
+        "username": "ART",
+        "password": "Art5225*",
+        "name": "คุณอาร์ต",
+        "role": "เจ้าหน้าที่บัญชี 1/Admin",
+        "badge": "⚡ เจ้าหน้าที่บัญชี 1/Admin",
+        "color": "#4A90D9"
+    },
+    "yanee": {
+        "username": "Yanee",
+        "password": "Yanee2540%",
+        "name": "คุณญาณี",
+        "role": "เจ้าหน้าที่บัญชี 2",
+        "badge": "📊 เจ้าหน้าที่บัญชี 2",
+        "color": "#3DBFA0"
+    },
+    "sales01": {
+        "username": "sales01",
+        "password": "SalesMT01@",
+        "name": "ฝ่ายขาย (MT)",
+        "role": "ทีมฝ่ายขาย (ส่งโปรโมชั่น)",
+        "badge": "📦 ทีมฝ่ายขาย (ส่งโปรโมชั่น)",
+        "color": "#FFA726"
+    },
+}
 
-    if st.session_state.get("_logged_in"):
+def check_password() -> bool:
+    if st.session_state.get("_logged_in") and st.session_state.get("_user"):
         return True
 
     st.markdown("""
@@ -50,32 +76,39 @@ def check_password() -> bool:
 
     _, col, _ = st.columns([1, 1.5, 1])
     with col:
-        st.markdown(f"""
-        <div style="background:#fff;border-radius:20px;padding:42px 36px 32px;
+        st.markdown("""
+        <div style="background:#fff;border-radius:20px;padding:38px 34px 28px;
                     box-shadow:0 8px 40px rgba(58,142,222,.18);
-                    border:2px solid #C5DEFF;text-align:center;margin-top:60px;">
-            <div style="font-size:66px;line-height:1;margin-bottom:10px;">🧾</div>
-            <h2 style="color:#1A3A5C;font-size:21px;font-weight:800;margin:0 0 4px 0;">{app_title}</h2>
-            <p style="color:#5A7BA8;font-size:13px;margin:0 0 26px 0;">{team_name} · ระบบใช้งานภายใน</p>
+                    border:2px solid #C5DEFF;text-align:center;margin-top:50px;">
+            <div style="font-size:62px;line-height:1;margin-bottom:8px;">🧾</div>
+            <h2 style="color:#1A3A5C;font-size:21px;font-weight:800;margin:0 0 4px 0;">Modern Trade Reconciliation AI</h2>
+            <p style="color:#5A7BA8;font-size:13px;margin:0 0 22px 0;">ระบบตรวจสอบบัญชี Modern Trade · เข้าสู่ระบบเฉพาะบุคคล</p>
         """, unsafe_allow_html=True)
 
-        pw = st.text_input("รหัสผ่าน", type="password",
-                           placeholder="ใส่รหัสผ่านเพื่อเข้าใช้งาน",
-                           label_visibility="collapsed")
+        user_in = st.text_input("ชื่อผู้ใช้ (Username)", placeholder="ระบุชื่อผู้ใช้ เช่น NOK, ART, Yanee, sales01")
+        pw_in   = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="ระบุรหัสผ่านของคุณ")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         btn = st.button("🔓  เข้าสู่ระบบ", use_container_width=True, type="primary")
 
         st.markdown("""
-        <p style="color:#A0B4CC;font-size:12px;margin-top:16px;">
-            🔒 ใช้งานเฉพาะภายในทีมเท่านั้น<br>ข้อมูลที่อัปโหลดไม่ถูกบันทึก
+        <p style="color:#A0B4CC;font-size:12px;margin-top:16px;line-height:1.5;">
+            🔒 ระบบปลอดภัยแยกสิทธิ์การใช้งานรายบุคคล<br>ข้อมูลที่อัปโหลดไม่ถูกบันทึกลงฐานข้อมูล
         </p></div>
         """, unsafe_allow_html=True)
 
         if btn:
-            if pw == correct_pw:
-                st.session_state["_logged_in"] = True
-                st.rerun()
+            u_clean = user_in.strip().lower()
+            if u_clean in USERS_DB:
+                user_info = USERS_DB[u_clean]
+                if pw_in == user_info["password"]:
+                    st.session_state["_logged_in"] = True
+                    st.session_state["_user"] = user_info
+                    st.rerun()
+                else:
+                    st.error("❌ รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้งครับ")
             else:
-                st.error("❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ครับ")
+                st.error("❌ ไม่พบชื่อผู้ใช้นี้ในระบบ กรุณาระบุชื่อผู้ใช้ที่ถูกต้อง")
     return False
 
 if not check_password():
@@ -560,7 +593,23 @@ with st.sidebar:
             st.metric("📋 รายการ", "5")
         st.markdown("---")
 
-    st.markdown('<p style="font-size:11px;opacity:.50;text-align:center;">v2.2 · © 2025 MT Recon AI</p>', unsafe_allow_html=True)
+    # ── User profile & Logout ───────────────────────
+    cur_user = st.session_state.get("_user", {})
+    st.markdown(f"""
+    <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,.25);">
+        <div style="font-size:11px;opacity:.8;color:#fff;">👤 ผู้ใช้งานปัจจุบัน:</div>
+        <div style="font-size:15px;font-weight:800;color:#fff;margin:2px 0;">{cur_user.get('name', 'ผู้ใช้งาน')}</div>
+        <div style="font-size:12px;color:#D0F5EC;font-weight:700;">{cur_user.get('badge', '')}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🚪 ออกจากระบบ (Logout)", use_container_width=True):
+        st.session_state["_logged_in"] = False
+        st.session_state["_user"] = None
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown('<p style="font-size:11px;opacity:.50;text-align:center;">v2.3 · Multi-User Secured · © 2025</p>', unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════
@@ -571,18 +620,22 @@ with st.sidebar:
 st.markdown('<div class="demo-ribbon">🎯 โหมดจำลองข้อมูล (Mockup Demo) — เลือกห้าง อัปโหลดเอกสาร แล้วกด "เริ่มคำนวณยันยอด"</div>', unsafe_allow_html=True)
 
 # Hero
+cur_user = st.session_state.get("_user", {})
 cpaxt_badge = ' <span class="cpaxt-badge">CPAXT Group</span>' if selected_store in CPAXT_STORES else ""
 billing_co  = MOCKUP_DB.get(selected_store, {}).get("billing_co", selected_store)
 st.markdown(f"""
 <div class="hero">
     <div class="hero-icon">🤖</div>
     <div>
+        <div style="font-size:14px;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:2px;">
+            สวัสดี, {cur_user.get('name', '')} ({cur_user.get('badge', '')})
+        </div>
         <h1>Modern Trade Reconciliation AI</h1>
         <p>
             ห้างที่เลือก: <strong>{selected_store}</strong>{cpaxt_badge}<br>
             <span style="font-size:13px;opacity:.85;">นิติบุคคล: {billing_co}</span>
         </p>
-        <span class="hero-badge">🎯 Mockup Demo v2.2 · Hybrid Promo Input · Streamlit</span>
+        <span class="hero-badge">🎯 Multi-User Version · Hybrid Promo Input · Streamlit</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
