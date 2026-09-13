@@ -91,8 +91,8 @@ def check_password() -> bool:
             <p style="color:#5A7BA8;font-size:14px;margin:0 0 24px 0;">ระบบตรวจสอบบัญชี Modern Trade · เข้าสู่ระบบเฉพาะบุคคล</p>
         """, unsafe_allow_html=True)
 
-        user_in = st.text_input("ชื่อผู้ใช้ (Username)", placeholder="เช่น NOK, ART, Yanee, sales01")
-        pw_in   = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="ระบุรหัสผ่านของคุณ")
+        user_in = st.text_input("ชื่อผู้ใช้ (Username)", placeholder="ระบุชื่อผู้ใช้งาน")
+        pw_in   = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="ระบุรหัสผ่าน")
         
         st.markdown("<br>", unsafe_allow_html=True)
         btn = st.button("🔓  เข้าสู่ระบบ", use_container_width=True, type="primary")
