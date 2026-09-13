@@ -91,15 +91,37 @@ def check_password() -> bool:
             <p style="color:#5A7BA8;font-size:14px;margin:0 0 24px 0;">ระบบตรวจสอบบัญชี Modern Trade · เข้าสู่ระบบเฉพาะบุคคล</p>
         """, unsafe_allow_html=True)
 
-        user_in = st.text_input("ชื่อผู้ใช้ (Username)", placeholder="ระบุชื่อผู้ใช้งาน")
-        pw_in   = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="ระบุรหัสผ่าน")
+        user_in = st.text_input("ชื่อผู้ใช้ (Username)", placeholder="ระบุชื่อผู้ใช้งาน", key="login_user_field")
+        pw_in   = st.text_input("รหัสผ่าน (Password)", type="password", placeholder="ระบุรหัสผ่าน", key="login_pw_field")
+        
+        # ปิดประวัติ Autocomplete / Dropdown ประวัติที่เคยพิมพ์ในเบราว์เซอร์ 100%
+        import streamlit.components.v1 as components
+        components.html("""
+        <script>
+        const disableAutofill = () => {
+            const inputs = window.parent.document.querySelectorAll('input');
+            inputs.forEach(inp => {
+                inp.setAttribute('autocomplete', 'new-password');
+                inp.setAttribute('autocorrect', 'off');
+                inp.setAttribute('autocapitalize', 'off');
+                inp.setAttribute('spellcheck', 'false');
+                inp.setAttribute('data-lpignore', 'true');
+                inp.setAttribute('data-form-type', 'other');
+            });
+        };
+        disableAutofill();
+        setTimeout(disableAutofill, 200);
+        setTimeout(disableAutofill, 600);
+        setTimeout(disableAutofill, 1200);
+        </script>
+        """, height=0)
         
         st.markdown("<br>", unsafe_allow_html=True)
         btn = st.button("🔓  เข้าสู่ระบบ", use_container_width=True, type="primary")
 
         st.markdown("""
         <p style="color:#A0B4CC;font-size:12px;margin-top:16px;line-height:1.5;">
-            🔒 ระบบแยกสิทธิ์การใช้งานรายบุคคล · ข้อมูลปลอดภัย 100%
+            🔒 ระบบความปลอดภัยสูง · ไม่บันทึกประวัติการกรอกในเบราว์เซอร์
         </p></div>
         """, unsafe_allow_html=True)
 
