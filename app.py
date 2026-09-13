@@ -526,6 +526,83 @@ def to_excel_report(df: pd.DataFrame, sheet_name="Reconciliation") -> bytes:
             ws.column_dimensions[col[0].column_letter].width = min(mx+5, 45)
     return buf.getvalue()
 
+def generate_recon_pdf(df: pd.DataFrame, store_name: str, billing_co: str, doc_no: str, period: str, date_str: str, total_amt: float, prepared_by: str) -> bytes:
+    """สร้างเอกสารรายงาน Reconciliation ในรูปแบบ PDF มาตรฐาน A4"""
+    fig = plt.figure(figsize=(8.27, 11.69), dpi=200, facecolor="#FFFFFF")
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.axis("off")
+
+    # Top Header banner
+    rect_top = patches.FancyBboxPatch((0.05, 0.90), 0.90, 0.07, boxstyle="round,pad=0.015,rounding_size=0.02", facecolor="#3A8EDE", edgecolor="#1B6CA8", linewidth=1.5)
+    ax.add_patch(rect_top)
+    ax.text(0.50, 0.945, "MODERN TRADE RECONCILIATION REPORT", color="white", fontsize=15, fontweight="bold", ha="center", va="center")
+    ax.text(0.50, 0.915, f"STORE: {store_name.upper()}", color="#D0F5EC", fontsize=11, fontweight="bold", ha="center", va="center")
+
+    # Document Meta Information Box
+    rect_info = patches.FancyBboxPatch((0.05, 0.79), 0.90, 0.09, boxstyle="round,pad=0.01,rounding_size=0.015", facecolor="#F4F8FF", edgecolor="#C5DEFF", linewidth=1)
+    ax.add_patch(rect_info)
+    
+    ax.text(0.08, 0.855, f"Legal Entity: {billing_co}", fontsize=9, fontweight="bold", color="#1A3A5C")
+    ax.text(0.08, 0.830, f"Document No: {doc_no}", fontsize=9, color="#1A3A5C")
+    ax.text(0.08, 0.805, f"Billing Period: {period}", fontsize=9, color="#1A3A5C")
+
+    ax.text(0.55, 0.855, f"Transfer Date: {date_str}", fontsize=9, color="#1A3A5C")
+    ax.text(0.55, 0.830, f"Total Transferred: THB {total_amt:,.2f}", fontsize=9, fontweight="bold", color="#1B6CA8")
+    ax.text(0.55, 0.805, f"Prepared By: {prepared_by} | Date: {datetime.now().strftime('%d/%m/%Y %H:%M')}", fontsize=8.5, color="#5A7BA8")
+
+    # Table Header row
+    y_start = 0.74
+    rect_th = patches.Rectangle((0.05, y_start), 0.90, 0.03, facecolor="#4A90D9", edgecolor="none")
+    ax.add_patch(rect_th)
+    ax.text(0.07, y_start + 0.009, "Expense Category", color="white", fontsize=9, fontweight="bold")
+    ax.text(0.48, y_start + 0.009, "Store Billed", color="white", fontsize=9, fontweight="bold", ha="right")
+    ax.text(0.66, y_start + 0.009, "Promo Calc", color="white", fontsize=9, fontweight="bold", ha="right")
+    ax.text(0.81, y_start + 0.009, "Difference", color="white", fontsize=9, fontweight="bold", ha="right")
+    ax.text(0.92, y_start + 0.009, "Status", color="white", fontsize=9, fontweight="bold", ha="center")
+
+    curr_y = y_start - 0.028
+    for idx, row in df.iterrows():
+        bg_col = "#EAF4FF" if idx % 2 == 1 else "#FFFFFF"
+        if "ยอดโอนสุทธิ" in str(row.get("หมวดหมู่ค่าใช้จ่าย", "")) or "Net Amount" in str(row.get("หมวดหมู่ค่าใช้จ่าย", "")):
+            bg_col = "#D6EAFF"
+        
+        rect_row = patches.Rectangle((0.05, curr_y), 0.90, 0.027, facecolor=bg_col, edgecolor="#E0EBF7", linewidth=0.5)
+        ax.add_patch(rect_row)
+
+        cat_title = str(row.get("หมวดหมู่ค่าใช้จ่าย", ""))
+        store_val = row.get("ยอดในบิลห้าง (บาท)", 0)
+        calc_val = row.get("ยอดคำนวณตามโปรฯ (บาท)", 0)
+        diff_val = row.get("ผลต่าง (บาท)", 0)
+        st_val = str(row.get("สถานะการตรวจสอบ", ""))
+
+        ax.text(0.07, curr_y + 0.008, cat_title[:38], color="#1A3A5C", fontsize=8, fontweight="bold" if "ยอดโอนสุทธิ" in cat_title else "normal")
+        ax.text(0.48, curr_y + 0.008, f"THB {store_val:,.2f}" if isinstance(store_val, (int, float)) else str(store_val), color="#1A3A5C", fontsize=8, ha="right")
+        ax.text(0.66, curr_y + 0.008, f"THB {calc_val:,.2f}" if isinstance(calc_val, (int, float)) else str(calc_val), color="#1A3A5C", fontsize=8, ha="right")
+        
+        diff_color = "#B71C1C" if isinstance(diff_val, (int, float)) and diff_val > 1 else ("#1B5E20" if isinstance(diff_val, (int, float)) and abs(diff_val) <= 1 else "#1A3A5C")
+        ax.text(0.81, curr_y + 0.008, f"THB {diff_val:,.2f}" if isinstance(diff_val, (int, float)) else str(diff_val), color=diff_color, fontsize=8, fontweight="bold", ha="right")
+        
+        st_color = "#B71C1C" if "❌" in st_val else ("#1B5E20" if "✅" in st_val else "#E67E22")
+        ax.text(0.92, curr_y + 0.008, "OVERCHARGE" if "❌" in st_val else ("MATCH" if "✅" in st_val else "DIFF"), color=st_color, fontsize=7.5, fontweight="bold", ha="center")
+        
+        curr_y -= 0.027
+
+    # Audit / Signature Block
+    rect_sig = patches.FancyBboxPatch((0.05, 0.06), 0.90, 0.14, boxstyle="round,pad=0.01,rounding_size=0.015", facecolor="#F8FAFD", edgecolor="#C5DEFF", linewidth=1)
+    ax.add_patch(rect_sig)
+
+    ax.text(0.08, 0.170, "AUDIT APPROVAL & SIGN-OFF:", fontsize=9, fontweight="bold", color="#1B6CA8")
+    ax.text(0.18, 0.100, "__________________________\nPrepared by (Accounting)", fontsize=8, color="#5A7BA8", ha="center")
+    ax.text(0.50, 0.100, "__________________________\nReviewed by (Finance Head)", fontsize=8, color="#5A7BA8", ha="center")
+    ax.text(0.82, 0.100, "__________________________\nApproved by (Management)", fontsize=8, color="#5A7BA8", ha="center")
+
+    ax.text(0.50, 0.030, "Confidential - For Internal Accounting & Audit Reconciliation Purposes Only", fontsize=8, color="#A0B4CC", ha="center")
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="pdf", bbox_inches="tight", facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close(fig)
+    return buf.getvalue()
+
 # ══════════════════════════════════════════════════════════════════════════════
 # 🖼️ INFOGRAPHIC IMAGE GENERATOR (Matplotlib & Pillow)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -864,7 +941,8 @@ with tab1:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        act_col1, act_col2, act_col3 = st.columns([2, 2, 2])
+        # ── Action Buttons: Save & Reset ──
+        act_col1, act_col2, _ = st.columns([2.5, 1.5, 2])
 
         with act_col1:
             st.markdown('<div class="save-btn">', unsafe_allow_html=True)
@@ -898,17 +976,6 @@ with tab1:
                 st.rerun()
 
         with act_col2:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            sn = selected_store[:15].replace("/","-").replace(" ","_")
-            st.download_button(
-                "📊 Export รายงานรอบนี้ (.xlsx)",
-                data=to_excel_report(df, sheet_name="Recon_Report"),
-                file_name=f"recon_{sn}_{ts}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-
-        with act_col3:
             if st.button("🔄 ล้างข้อมูลรอบนี้ (Reset)", use_container_width=True):
                 st.session_state["show_result"] = False
                 st.session_state["saved_msg"] = False
@@ -916,6 +983,56 @@ with tab1:
 
         if st.session_state.get("saved_msg"):
             st.success("✅ บันทึกยอดรอบโอนนี้ลงฐานข้อมูลสะสมรายปีสำเร็จเรียบร้อย! คลิกดูที่แท็บ 2 และแท็บ 3 ได้เลยครับ")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # ── Export Section: Excel, CSV, PDF ──
+        st.markdown("<h3 style='color:#3A8EDE;font-size:18px;font-weight:800;'>📥 Export รายงานผลการตรวจสอบรอบนี้ (3 รูปแบบ)</h3>", unsafe_allow_html=True)
+        
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        sn = selected_store[:15].replace("/","-").replace(" ","_")
+
+        exp_col1, exp_col2, exp_col3 = st.columns(3)
+
+        with exp_col1:
+            st.download_button(
+                "📊 Export เป็น Excel (.xlsx)",
+                data=to_excel_report(df, sheet_name="Recon_Report"),
+                file_name=f"recon_{sn}_{ts}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
+
+        with exp_col2:
+            # CSV with UTF-8-SIG for proper Thai characters in Excel
+            csv_bytes = df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+            st.download_button(
+                "📄 Export เป็น CSV (.csv)",
+                data=csv_bytes,
+                file_name=f"recon_{sn}_{ts}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+        with exp_col3:
+            # A4 PDF Document
+            pdf_bytes = generate_recon_pdf(
+                df=df,
+                store_name=selected_store,
+                billing_co=d["billing_co"],
+                doc_no=d["doc"],
+                period=d["period"],
+                date_str=d["date"],
+                total_amt=d["total"],
+                prepared_by=cur_user.get("name", "ฝ่ายบัญชี Modern Trade")
+            )
+            st.download_button(
+                "📑 Export เป็น PDF (.pdf)",
+                data=pdf_bytes,
+                file_name=f"recon_{sn}_{ts}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -994,14 +1111,24 @@ with tab2:
     st.dataframe(filtered_df, use_container_width=True, height=320)
 
     st.markdown("---")
-    exp_c1, _, _ = st.columns([2, 2, 2])
+    st.markdown("<h3 style='color:#3A8EDE;font-size:18px;font-weight:800;'>📥 Export ข้อมูลสะสมรายปี</h3>", unsafe_allow_html=True)
+    exp_c1, exp_c2, _ = st.columns([2, 2, 2])
     with exp_c1:
         annual_excel = to_excel_report(filtered_df, sheet_name="Annual_Summary")
         st.download_button(
-            "📥 Export ข้อมูลรวมสิ้นปีเป็น Excel (.xlsx)",
+            "📊 Export เป็น Excel (.xlsx)",
             data=annual_excel,
             file_name=f"annual_summary_{datetime.now().strftime('%Y%m%d')}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+    with exp_c2:
+        annual_csv = filtered_df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8-sig")
+        st.download_button(
+            "📄 Export เป็น CSV (.csv)",
+            data=annual_csv,
+            file_name=f"annual_summary_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
             use_container_width=True
         )
 
