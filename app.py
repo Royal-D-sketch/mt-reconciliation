@@ -26,7 +26,7 @@ def check_password() -> bool:
         app_title  = st.secrets["app"].get("title", "Modern Trade Reconciliation AI")
         team_name  = st.secrets["app"].get("team",  "ทีมบัญชี")
     except Exception:
-        correct_pw = "MTRecon2025"
+        correct_pw = "MT029030445*"
         app_title  = "Modern Trade Reconciliation AI"
         team_name  = "ทีมบัญชี"
 
